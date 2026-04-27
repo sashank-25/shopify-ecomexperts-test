@@ -1,0 +1,62 @@
+{% comment %} sections/tisso-vision-grid.liquid {% endcomment %}
+
+{{ 'tisso-vision-grid.css' | asset_url | stylesheet_tag }}
+
+<section class="tisso-vision">
+  <div class="tisso-vision__header">
+    <h2 class="tisso-vision__title">{{ section.settings.title }}</h2>
+  </div>
+  <div class="tisso-vision__grid">
+    {% for block in section.blocks %}
+      <div class="tisso-vision__item" {{ block.shopify_attributes }}>
+        {% if block.settings.image != blank %}
+          {{ block.settings.image | image_url: width: 600 | image_tag: loading: 'lazy', class: 'tisso-vision__img' }}
+        {% else %}
+          {{ 'image' | placeholder_svg_tag: 'tisso-vision__img placeholder-svg' }}
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "Tisso Vision Grid",
+  "tag": "section",
+  "class": "section",
+  "settings": [
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Section Title",
+      "default": "Tisso vision in the wild"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "photo",
+      "name": "Photo",
+      "settings": [
+        {
+          "type": "image_picker",
+          "id": "image",
+          "label": "Image"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Tisso Vision Grid",
+      "blocks": [
+        { "type": "photo" },
+        { "type": "photo" },
+        { "type": "photo" },
+        { "type": "photo" },
+        { "type": "photo" },
+        { "type": "photo" }
+      ]
+    }
+  ]
+}
+{% endschema %}

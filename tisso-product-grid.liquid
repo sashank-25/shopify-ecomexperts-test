@@ -1,0 +1,114 @@
+{{ 'tisso-product-grid.css' | asset_url | stylesheet_tag }}
+{% assign current_collection = collections[section.settings.collection] %}
+
+<section class="tisso-products">
+  <div class="tisso-products__header">
+    <h2 class="tisso-products__title">{{ section.settings.title }}</h2>
+  </div>
+
+  <div class="tisso-products__grid">
+    {% for product in current_collection.products limit: section.settings.products_to_show %}
+    <div class="tisso-card" data-product-id="{{ product.id }}">
+
+      {%- comment -%} Image {%- endcomment -%}
+      <div class="tisso-card__img-wrap">
+        <a href="{{ product.url }}">
+          {% if product.featured_image %}
+            {{ product.featured_image | image_url: width: 600 | image_tag: loading: 'lazy', class: 'tisso-card__img' }}
+          {% else %}
+            {{ 'product-1' | placeholder_svg_tag: 'tisso-card__img placeholder-svg' }}
+          {% endif %}
+        </a>
+      </div>
+
+      {%- comment -%} Info {%- endcomment -%}
+      <div class="tisso-card__body">
+        <a href="{{ product.url }}" class="tisso-card__name">{{ product.title }}</a>
+        <p class="tisso-card__price">{{ product.price | money }}</p>
+        <p class="tisso-card__desc">{{ product.description | strip_html | truncate: 100 }}</p>
+
+        {% assign color_option = product.options_by_name['Color'] %}
+        {% if color_option %}
+        <div class="tisso-card__option">
+          <span class="tisso-card__option-label">Color</span>
+          <div class="tisso-card__swatches">
+            {% for value in color_option.values %}
+              <button class="swatch" data-value="{{ value }}" title="{{ value }}"
+                style="background:{{ value | downcase | replace: ' ', '' }}">{{ value }}</button>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+        {% assign size_option = product.options_by_name['Size'] %}
+        {% if size_option %}
+        <div class="tisso-card__option">
+          <span class="tisso-card__option-label">Size</span>
+          <select class="tisso-card__select">
+            <option value="">Choose your size</option>
+            {% for value in size_option.values %}
+              <option value="{{ value }}">{{ value }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        {% endif %}
+
+        <button class="tisso-card__atc" data-variant="{{ product.first_available_variant.id }}">
+          ADD TO CART →
+        </button>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<script>
+document.querySelectorAll('.tisso-card__atc').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    const variantId = btn.dataset.variant;
+    if (!variantId) { alert('Please select a size first'); return; }
+    btn.textContent = 'Adding...';
+    btn.disabled = true;
+    try {
+      const res = await fetch('/cart/add.js', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ id: Number(variantId), quantity: 1 })
+      });
+      if (res.ok) {
+        btn.textContent = 'Added ✓';
+        setTimeout(() => {
+          btn.innerHTML = 'ADD TO CART &rarr;';
+          btn.disabled = false;
+        }, 1500);
+        // refresh cart count
+        fetch('/cart.js')
+          .then(r => r.json())
+          .then(cart => {
+            const counter = document.querySelector('.cart-count-bubble span, [data-cart-count]');
+            if (counter) counter.textContent = cart.item_count;
+          });
+      } else {
+        btn.innerHTML = 'ADD TO CART &rarr;';
+        btn.disabled = false;
+      }
+    } catch(e) {
+      btn.innerHTML = 'ADD TO CART &rarr;';
+      btn.disabled = false;
+    }
+  });
+});
+</script>
+
+{% schema %}
+{
+  "name": "Tisso Product Grid",
+  "settings": [
+    { "type": "text", "id": "title", "label": "Title", "default": "TISSO VISON" },
+    { "type": "collection", "id": "collection", "label": "Collection" },
+    { "type": "range", "id": "products_to_show", "min": 2, "max": 12,
+      "step": 1, "default": 6, "label": "Products to show" }
+  ],
+  "presets": [{ "name": "Tisso Product Grid" }]
+}
+{% endschema %}
